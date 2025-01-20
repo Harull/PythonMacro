@@ -1,64 +1,80 @@
 import pyautogui
+import pydirectinput
 from enum import Enum
 import os 
 import win32api
 
-class MouseKeyType(Enum):
+class InputKeyType(Enum):
     NONE = 0
-    CLICKED = 1
-    MOVED = 2
-    SCROLLED = 3
+    MOUSE_CLICKED = 1
+    MOUSE_MOVED = 2
+    MOUSE_SCROLLED = 3
+    KEYBOARD_KEY_PRESSED = 4
+    KEYBOARD_KEY_REALEASED = 5
 
 class Key:
 
     time = 0.0
-    mouse_data = None
-    key_type : MouseKeyType = MouseKeyType.NONE
+    key_data = None
+    key_type : InputKeyType = InputKeyType.NONE
 
-    def __init__(self, time, mouse_data, key_type : MouseKeyType):
+    def __init__(self, time, key_data, key_type : InputKeyType):
         self.time = time
-        self.mouse_data = mouse_data
+        self.key_data = key_data
         self.key_type = key_type
         self.mouse_button_clicked = None
 
-    def ExecuteToKey(self, current_replay_time : float):
+    def ExecuteToKey(self, current_replay_time : float, replay_speed : float):
         """Execute to key is a method in which we'll try to reach the state of the key, meaning matching the mouse position"""
-        was_key_executed : bool = current_replay_time >= self.time
-        time_of_the_executed_key : float = self.time
+        was_key_executed : bool = current_replay_time >= self.time/replay_speed
+        time_of_the_executed_key : float = self.time /replay_speed
 
+        #Note to self, i would love to use a "match" statement, but it's not available for the python version I'm currently using
         if(was_key_executed):
-            if self.key_type == MouseKeyType.CLICKED:
+            if self.key_type == InputKeyType.MOUSE_CLICKED:
                 self.__ExecuteClick()
-            elif self.key_type == MouseKeyType.MOVED:
+            elif self.key_type == InputKeyType.MOUSE_MOVED:
                 self.__ExecuteMoved()
-            elif self.key_type == MouseKeyType.SCROLLED:
+            elif self.key_type == InputKeyType.MOUSE_SCROLLED:
                 self.__ExecuteScrolled()
+            elif self.key_type == InputKeyType.KEYBOARD_KEY_PRESSED:
+                self.__ExecuteKeyboardKeyPressed()
+            elif self.key_type == InputKeyType.KEYBOARD_KEY_REALEASED:
+                self.__ExecuteKeyboardKeyReleased()
             # else:
             #     was_key_executed = False
 
         return (was_key_executed, time_of_the_executed_key)
 
     def __ExecuteClick(self):
-        print("click")        
         #data tuple = (x, y, button, isPressed)
-        if self.mouse_data[3]:
-            pyautogui.mouseDown(self.mouse_data[0], self.mouse_data[1], _pause=False)
+
+        if self.key_data[3]:
+            pydirectinput.mouseDown(self.key_data[0], self.key_data[1], _pause=False)
         else:
-            pyautogui.mouseUp(self.mouse_data[0], self.mouse_data[1], _pause=False)
+            pydirectinput.mouseUp(self.key_data[0], self.key_data[1], _pause=False)
     
     def __ExecuteMoved(self):
+        #data tuple = (x, y)
+
         # VvVvVvV Works for everything but minecraft 
-        # win32api.SetCursorPos((self.mouse_data[0], self.mouse_data[1]))
-        pyautogui.moveTo(self.mouse_data[0], self.mouse_data[1], _pause=False)
+        # win32api.SetCursorPos((self.key_data[0], self.key_data[1]))
+        pydirectinput.moveTo(self.key_data[0], self.key_data[1], _pause = False)
         #pyautogui.move(1,1)
 
-    
     def __ExecuteScrolled(self):
-        to_return : bool = False
-
-        #pyautogui.scroll(1,  )
         #data tuple = (x, y, dx, dy)
+        print(self.key_data)
+        pyautogui.scroll(self.key_data[2] )
 
-        return to_return
-            
+    def __ExecuteKeyboardKeyPressed():
+        #data tuple = (concerned key)
+        #pydirectinput.keyDown(pydirectinput.KEYBOARD_KEYS)
+        pass            
+
+    def __ExecuteKeyboardKeyReleased():
+        #date tuple = (concerned key)
+
+        pass
+
             

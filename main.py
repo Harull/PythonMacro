@@ -12,15 +12,15 @@ main_window.show()
 
 track = Track()
 time.sleep(5)
-print("record has started")
+print("<RECORD> has started")
 track.StartTracking()
-time.sleep(5)
-print("record will be played in 5sec")
 def exec_thread():
     time.sleep(10)
-    print("record start replaying")
     track.StopTracking()
-    track_replayer = TrackReplayer(track)
+    print("<RECORD> stopped, will be played in 5sec")
+    time.sleep(10)
+    print("<RECORD> start replaying")
+    track_replayer = TrackReplayer(track, 0.5)
     track_replayer.run()
 
 
@@ -28,3 +28,18 @@ thread = threading.Thread(target = exec_thread, daemon=True)
 thread.start()
 
 app.exec_()
+
+# from pynput import keyboard
+
+
+# def OnKeyboarKeyPressed(key_pressed):
+#     print(key_pressed.__str__()+ "\n")
+    
+# def OnKeyboarKeyReleased(key_released):
+#     print(key_released.__str__() + "\n")
+
+# test_listener = keyboard.Listener(OnKeyboarKeyPressed, OnKeyboarKeyReleased)
+# test_listener.start()
+
+# while True:
+#     pass
