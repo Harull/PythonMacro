@@ -3,7 +3,6 @@ import pydirectinput
 import pynput
 from enum import Enum
 import os 
-import win32api
 
 class InputKeyType(Enum):
     NONE = 0
