@@ -1,5 +1,6 @@
 import pyautogui
 import pydirectinput
+import pynput
 from enum import Enum
 import os 
 import win32api
@@ -57,23 +58,29 @@ class Key:
     def __ExecuteMoved(self):
         #data tuple = (x, y)
 
-        # VvVvVvV Works for everything but minecraft 
-        # win32api.SetCursorPos((self.key_data[0], self.key_data[1]))
+        # VvVvVvV try to make relative movement so it can work in minecraft aswell
         pydirectinput.moveTo(self.key_data[0], self.key_data[1], _pause = False)
-        #pyautogui.move(1,1)
 
     def __ExecuteScrolled(self):
         #data tuple = (x, y, dx, dy)
-        print(self.key_data)
-        pyautogui.scroll(self.key_data[2] )
 
-    def __ExecuteKeyboardKeyPressed():
+        print(self.key_data)
+        pynput.mouse.Controller().scroll(self.key_data[2],self.key_data[3])
+
+    def __ExecuteKeyboardKeyPressed(self):
         #data tuple = (concerned key)
-        #pydirectinput.keyDown(pydirectinput.KEYBOARD_KEYS)
+
+        pynput.keyboard.Controller().press(self.key_data[0])
         pass            
 
-    def __ExecuteKeyboardKeyReleased():
-        #date tuple = (concerned key)
+
+    def __ExecuteKeyboardKeyReleased(self):
+        #data tuple = (concerned key)
+
+        pynput.keyboard.Controller().release(self.key_data[0])
+        # print(f"Trying to reproduce 'RELEASED' on the keycode: {self.key_data[0]}")
+        # pydirectinput.keyUp(self.key_data[0])
+        # pynput.keyboard.Controller().release(self.key_data[0])
 
         pass
 

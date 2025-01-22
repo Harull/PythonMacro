@@ -14,32 +14,30 @@ class Track:
         self.key_list = list()
         self.is_registering = False
         self.mouse_listener = pynput.mouse.Listener(lambda x,y : self.OnMouseMoved(x,y), lambda x, y, button, pressed: self.OnMouseClicked(x, y, button, pressed), lambda x, y, dx, dy : self.OnScroll(x, y, dx, dy))
-        self.keyboard_listener = pynput.keyboard.Listener()
-
+        self.keyboard_listener = pynput.keyboard.Listener(lambda x : self.OnKeyboarKeyPressed(x), lambda x : self.OnKeyboarKeyReleased(x))
     
     def StartTracking(self,):
         self.time_at_start = time.time()
         self.mouse_listener.start()
+        self.keyboard_listener.start()
 
     def StopTracking(self):
         self.mouse_listener.stop()
+        self.keyboard_listener.stop()
 
     def OnMouseClicked(self, x, y, button, pressed):
-        # print(f"Mouse clicked: {x}, {y}, {button}, {pressed}\n")
         self.key_list.append(key.Key(time.time()-self.time_at_start, (x, y, button, pressed), key.InputKeyType.MOUSE_CLICKED))
 
     def OnMouseMoved(self, x, y):
-        # print(f"Mouse moved: {x}, {y}\n")
         self.key_list.append(key.Key(time.time()-self.time_at_start, (x, y), key.InputKeyType.MOUSE_MOVED))
 
     def OnScroll(self, x, y, dx, dy):
-        # print(f"Mouse scrolled: {x}, {y}, dir x {dx}, dir y {dy}\n")
         self.key_list.append(key.Key(time.time()-self.time_at_start, (x, y, dx, dy), key.InputKeyType.MOUSE_SCROLLED))
 
     def OnKeyboarKeyPressed(self, key_pressed):
-        self.key_list.append(key.Key(time.time()-self.time_at_start, (key_pressed), key.InputKeyType.KEYBOARD_KEY_PRESSED))
+        self.key_list.append(key.Key(time.time()-self.time_at_start, (key_pressed,), key.InputKeyType.KEYBOARD_KEY_PRESSED))
     
     def OnKeyboarKeyReleased(self, key_released):
-        self.key_list.append(key.Key(time.time()-self.time_at_start, (key_released), key.InputKeyType.KEYBOARD_KEY_REALEASED))
+        self.key_list.append(key.Key(time.time()-self.time_at_start, (key_released,), key.InputKeyType.KEYBOARD_KEY_REALEASED))
         
 
