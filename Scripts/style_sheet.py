@@ -53,6 +53,13 @@ dark_theme = """
     QPushButton:pressed {
         background-color: #777;
     }
+    
+    QTextEdit{
+        background-color: #141414;
+        color: #f0f0f0;
+        border: 1px solid #555;
+        padding: 5px;
+    }
 
     QLineEdit {
         background-color: #444;

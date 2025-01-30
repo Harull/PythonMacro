@@ -1,4 +1,4 @@
-from PySide2.QtGui import QFontDatabase, QFont
+from PySide6.QtGui import QFontDatabase, QFont
 
 class FontLoader():
 

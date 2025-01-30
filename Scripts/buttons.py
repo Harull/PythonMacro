@@ -1,4 +1,4 @@
-import PySide2.QtWidgets as qt
+import PySide6.QtWidgets as qt
 
 class QPBindingButton(qt.QPushButton):
     current_binding : str = ""

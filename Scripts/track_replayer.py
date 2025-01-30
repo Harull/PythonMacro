@@ -1,4 +1,4 @@
-from PySide2.QtCore import QThread
+from PySide6.QtCore import QThread
 from track import Track
 import time
 

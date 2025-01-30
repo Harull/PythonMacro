@@ -1,5 +1,5 @@
-import PySide2.QtWidgets as qt
-import PySide2.QtCore as qtcore
+import PySide6.QtWidgets as qt
+import PySide6.QtCore as qtcore
 from main_window import MainWindow
 from track import Track
 import threading
@@ -34,7 +34,7 @@ def exec_thread():
 # thread = threading.Thread(target = exec_thread, daemon=True)
 # thread.start()
 
-app.exec_()
+app.exec()
 
 # from pynput import keyboard
 
