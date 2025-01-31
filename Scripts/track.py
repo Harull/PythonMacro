@@ -1,8 +1,9 @@
 import pynput
 import key
 import time
-from console_widget import ConsoleWidget
+from console_widget import QPConsoleWidget, LogType
 from stoppable_thread import StoppableThread
+from PySide6.QtCore import QTimer
 
 # A track will ideally be a sequence of input registered, in order to be played back by the script.
 # Resulting in a macro
@@ -11,7 +12,7 @@ class Track:
     is_registering = False
     mouse_listener = None
     time_at_start = None
-    thread_of_late_execution : StoppableThread = None
+    timer_of_late_execution : QTimer = None
 
     def __init__(self):
         self.key_list = list()
@@ -19,33 +20,42 @@ class Track:
         self.mouse_listener = pynput.mouse.Listener(lambda x,y : self.OnMouseMoved(x,y), lambda x, y, button, pressed: self.OnMouseClicked(x, y, button, pressed), lambda x, y, dx, dy : self.OnScroll(x, y, dx, dy))
         self.keyboard_listener = pynput.keyboard.Listener(lambda x : self.OnKeyboarKeyPressed(x), lambda x : self.OnKeyboarKeyReleased(x))
     
-    def StartTracking(self, delay : int, console_widget : ConsoleWidget):
-        self.thread_of_late_execution = StoppableThread(target=self.__StartTrackingThread, args=(delay,console_widget), daemon=True)
+    def StartTracking(self, delay_in_seconds : int, console_widget : QPConsoleWidget):
+        if self.timer_of_late_execution and self.timer_of_late_execution.isActive():
+            console_widget.AddLog(f"Tracking already ready to start in [{self.timer_of_late_execution.remainingTime() / 1000}] seconds", LogType.WARNING)
+            return
+        if self.is_registering:
+            console_widget.AddLog(f"You are already tracking, you cannot start the tracking, stop first then try again", LogType.WARNING)
+            return
+        if delay_in_seconds > 0:
+            console_widget.AddLog(f"Start tracking in {delay_in_seconds} seconds")
+
+        self.timer_of_late_execution = QTimer()
+        self.timer_of_late_execution.timeout.connect(lambda : self.__StartTrackingThread(console_widget))
+        self.timer_of_late_execution.setInterval(delay_in_seconds*1000)
+        self.timer_of_late_execution.setSingleShot(True)
+        self.timer_of_late_execution.start()
     
-    def __StartTrackingThread(self, tuple):
-        #tuple = (delay:int, console_widget:ConsoleWidget)
-        delay : int = tuple[0]
-        console_widget : ConsoleWidget = tuple[1]
-
-        starting_time = time.time()
-        current_time = 0
-
-        while current_time < delay: #since I can't use time.sleep(delay) because the thread is stopppable and I need to use at some occurence stopped(), I did this workaround of a timer
-            if self.thread_of_late_execution.stopped():
-                return
-            current_time = time.time() - starting_time
-
+    def __StartTrackingThread(self, console_widget:QPConsoleWidget):
+        self.time_at_start = time.time()
         self.mouse_listener.start()
         self.keyboard_listener.start()
+        self.is_registering = True
         console_widget.AddLog("Tracking Started")
 
-    def StopTracking(self, console_widget : ConsoleWidget):
-        if self.thread_of_late_execution:
-            self.thread_of_late_execution.stop()
-            self.thread_of_late_execution.join()
+    def StopTracking(self, console_widget : QPConsoleWidget):
+        if not( self.timer_of_late_execution and self.timer_of_late_execution.isActive()) and not self.is_registering:
+            console_widget.AddLog(f"Tracking already stopped, start a tracking first before stopping it", LogType.WARNING)
+            return
+        
+        log_text = "Tracking Stopped"
+        if self.timer_of_late_execution and self.timer_of_late_execution.isActive():
+            self.timer_of_late_execution.stop()
+            log_text = "Tracking Canceled"
         self.mouse_listener.stop()
         self.keyboard_listener.stop()
-        console_widget.AddLog("Tracking Stoped")
+        self.is_registering = False
+        console_widget.AddLog(log_text)
 
     def OnMouseClicked(self, x, y, button, pressed):
         self.key_list.append(key.Key(time.time()-self.time_at_start, (x, y, button, pressed), key.InputKeyType.MOUSE_CLICKED))

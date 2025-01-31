@@ -3,8 +3,9 @@ from track import Track
 import PySide6.QtWidgets as qt
 import PySide6.QtGui as qtgui
 import buttons as qpb #qpb = Q Personal Button
+from console_widget import QPConsoleWidget
 import enum
-
+from dictionary_utility import DictionaryUtil
 class EDelayTime(enum.Enum):
     NO_DELAY = 0
     THREE_SECONDS = 3
@@ -14,13 +15,13 @@ class EDelayTime(enum.Enum):
 
 class MainWindow(qt.QMainWindow):
 
+    DEFAULT_TRACK_NAME = "Default Track"
     window_size = (100, 100) 
     start_record_track_shortcut = "F2"
     stop_record_track_shortcut = "F3"
     last_or_current_track : Track = None
     is_recording_new_track : bool = False
-    all_registered_tracks = list()
-
+    all_registered_tracks_dictionary = dict() # key : str, value : Track)
     def __init__(self, window_size):
         super().__init__()
         self.window_size = window_size
@@ -69,7 +70,7 @@ class MainWindow(qt.QMainWindow):
         name_layout = qt.QVBoxLayout()
         name_layout.addWidget(qt.QLabel("Enter the name of your next track to record"))
         self.new_track_name_line_edit = qt.QLineEdit()
-        self.new_track_name_line_edit.setText("Default Track")
+        self.new_track_name_line_edit.setText(self.DEFAULT_TRACK_NAME)
         name_layout.addWidget(self.new_track_name_line_edit)
         create_track_layout.addLayout(name_layout)
         create_track_layout.addItem(qt.QSpacerItem(0,50))
@@ -95,8 +96,8 @@ class MainWindow(qt.QMainWindow):
         create_track_layout.addItem(qt.QSpacerItem(0,50))
 
         create_track_layout.addWidget(qt.QLabel("Feedback console: "),alignment= Qt.AlignmentFlag.AlignHCenter)
-        self.console_log = qt.QTextEdit()
-        self.console_log.setReadOnly(True)
+        self.console_log = QPConsoleWidget()
+        self.console_log.AddLog("This is a test")
         create_track_layout.addWidget(self.console_log)
     
     
@@ -168,24 +169,24 @@ class MainWindow(qt.QMainWindow):
 
     def StartStopRecordButtonPressed(self):
         if self.is_recording_new_track and self.last_or_current_track:
-            self.last_or_current_track.StopTracking()
-            self.all_registered_tracks.append(self.last_or_current_track)
+            self.StopRecording()
         else:
-            self.last_or_current_track = Track()
-            self.last_or_current_track.StartTracking()
+            self.StartRecording()
 
     def StartRecording(self):
         if self.is_recording_new_track:
             return
         self.last_or_current_track = Track()
-        self.last_or_current_track.StartTracking()
+        self.last_or_current_track.StartTracking(self.start_time_offset_dropdown.currentData(), self.console_log)
         self.is_recording_new_track = True
 
     def StopRecording(self):
         if not self.is_recording_new_track:
             return
-        self.last_or_current_track.StopTracking()
-        self.all_registered_tracks.append(self.last_or_current_track)
+        self.last_or_current_track.StopTracking(self.console_log)
+        valid_name_of_track = self.GetUniqueTrackName()
+        self.all_registered_tracks_dictionary.update({valid_name_of_track, self.last_or_current_track})
+        self.console_log.AddLog(f"The track was saved as '{valid_name_of_track}'")
         self.is_recording_new_track = False
 
     def PopulateTimeOffsetDropdown(self):
@@ -195,5 +196,10 @@ class MainWindow(qt.QMainWindow):
             except:
                 continue
             self.start_time_offset_dropdown.addItem(qtgui.QIcon(f"Assets/{enum.name}.png"), f"{i}-second delay" if i > 0 else "No delay", i)
-            
+
+    def GetUniqueTrackName(self):
+        """This method is used to have a unique track name, the name will try to be the one in 'self.new_track_name_line_edit.text()'"""
+        wanted_name = self.new_track_name_line_edit.text()
+        wanted_name = wanted_name if len(wanted_name) > 0 else self.DEFAULT_TRACK_NAME
+        return DictionaryUtil.GetUniqueStringKey(self.all_registered_tracks_dictionary, wanted_name)
     

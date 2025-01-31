@@ -54,9 +54,9 @@ dark_theme = """
         background-color: #777;
     }
     
-    QTextEdit{
+    QPConsoleWidget{
         background-color: #141414;
-        color: #f0f0f0;
+        color: #ffcb21;
         border: 1px solid #555;
         padding: 5px;
     }
