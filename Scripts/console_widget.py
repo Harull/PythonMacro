@@ -15,6 +15,9 @@ class QPConsoleWidget(qt.QTextEdit):
         
     
     def AddLog(self, log_text : str, log_type : LogType = LogType.ACTION):
-        self.setText(self.toPlainText() + f"[{log_type.name}] - (" + time.strftime("%Y-%m-%d %H:%M:%S",time.gmtime()) + f") -: {log_text}\n")
+        self.setText(self.toPlainText() + f"[{log_type.name}] - (" + time.strftime("%Y-%m-%d %H:%M:%S",time.localtime()) + f") -: {log_text}\n")
+        cursor = self.textCursor()
+        cursor.movePosition(qtgui.QTextCursor.MoveOperation.End)
+        self.setTextCursor(cursor)
 
     

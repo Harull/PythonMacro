@@ -6,6 +6,7 @@ import buttons as qpb #qpb = Q Personal Button
 from console_widget import QPConsoleWidget
 import enum
 from dictionary_utility import DictionaryUtil
+
 class EDelayTime(enum.Enum):
     NO_DELAY = 0
     THREE_SECONDS = 3
@@ -107,6 +108,19 @@ class MainWindow(qt.QMainWindow):
         self.manage_tracks_widget = qt.QWidget()
         self.manage_tracks_widget.setLayout(manage_tracks_layout)
 
+        manage_tracks_layout.addWidget(qt.QLabel("Here is all your registered track:", alignment=Qt.AlignmentFlag.AlignHCenter))
+
+        self.tracking_list = qt.QListWidget()
+        manage_tracks_layout.addWidget(self.tracking_list)
+
+
+        stacked_buttons_layout = qt.QStackedLayout()
+        delete_selected_tracks_button = qpb.QPButton("Delete Selected Tracks", self.DeleteSelectedTracks)
+        stacked_buttons_layout.addWidget(delete_selected_tracks_button)
+
+        manage_tracks_layout.addLayout(stacked_buttons_layout)
+
+
         pass
 
     def InitReplayTrackLayout(self):
@@ -185,7 +199,7 @@ class MainWindow(qt.QMainWindow):
             return
         self.last_or_current_track.StopTracking(self.console_log)
         valid_name_of_track = self.GetUniqueTrackName()
-        self.all_registered_tracks_dictionary.update({valid_name_of_track, self.last_or_current_track})
+        self.all_registered_tracks_dictionary.update({valid_name_of_track : self.last_or_current_track})
         self.console_log.AddLog(f"The track was saved as '{valid_name_of_track}'")
         self.is_recording_new_track = False
 
@@ -203,3 +217,5 @@ class MainWindow(qt.QMainWindow):
         wanted_name = wanted_name if len(wanted_name) > 0 else self.DEFAULT_TRACK_NAME
         return DictionaryUtil.GetUniqueStringKey(self.all_registered_tracks_dictionary, wanted_name)
     
+    def DeleteSelectedTracks(self):
+        pass #TODO

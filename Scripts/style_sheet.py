@@ -97,54 +97,99 @@ dark_theme = """
     }
 
     QScrollBar:vertical {
-        background-color: #333;
-        width: 12px;
-        margin: 18px 0 18px 0;
+    background: #2b2b2b;           
+    width: 10px;                   
+    margin: 0px 0px 0px 0px;       
+    border: none;                  
     }
 
     QScrollBar::handle:vertical {
-        background-color: #555;
-        min-height: 20px;
-        border-radius: 4px;
+        background: #5c5c5c;           
+        min-height: 20px;              
+        border-radius: 5px;            
     }
 
+    QScrollBar::handle:vertical:hover {
+        background: #888888;           
+    }
+
+    QScrollBar::handle:vertical:pressed {
+        background: #aaaaaa;         
+    }
+
+    QScrollBar::sub-line:vertical,
     QScrollBar::add-line:vertical {
-        background-color: #444;
-        height: 18px;
-        subcontrol-position: bottom;
-        subcontrol-origin: margin;
+        height: 0px;                   
+        width: 0px;
     }
 
-    QScrollBar::sub-line:vertical {
-        background-color: #444;
-        height: 18px;
-        subcontrol-position: top;
-        subcontrol-origin: margin;
+    QScrollBar::add-page:vertical, 
+    QScrollBar::sub-page:vertical {
+        background: none;             
     }
 
     QScrollBar:horizontal {
-        background-color: #333;
-        height: 12px;
-        margin: 0 18px 0 18px;
+        background: #2b2b2b;
+        height: 10px;
+        margin: 0px 0px 0px 0px;
+        border: none;
     }
 
     QScrollBar::handle:horizontal {
-        background-color: #555;
+        background: #5c5c5c;
         min-width: 20px;
-        border-radius: 4px;
+        border-radius: 5px;
     }
 
+    QScrollBar::handle:horizontal:hover {
+        background: #888888;
+    }
+
+    QScrollBar::handle:horizontal:pressed {
+        background: #aaaaaa;
+    }
+
+    QScrollBar::sub-line:horizontal,
     QScrollBar::add-line:horizontal {
-        background-color: #444;
-        width: 18px;
-        subcontrol-position: right;
-        subcontrol-origin: margin;
+        width: 0px;
+        height: 0px;
     }
 
-    QScrollBar::sub-line:horizontal {
-        background-color: #444;
-        width: 18px;
-        subcontrol-position: left;
-        subcontrol-origin: margin;
+    QScrollBar::add-page:horizontal, 
+    QScrollBar::sub-page:horizontal {
+        background: none;
+    }
+
+    QListWidget {
+    background-color: #2b2b2b;      /* Dark background for the list */
+    border: 1px solid #3c3c3c;      /* Thin border around the list */
+    color: #ffffff;                 /* Text color */
+    padding: 5px;
+    border-radius: 5px;             /* Slight rounding for a clean look */
+    }
+
+    QListWidget::item {
+        background-color: #3c3c3c;      /* Dark gray for each item background */
+        padding: 10px;                  /* Padding around text */
+        margin: 3px 0;                  /* Spacing between items */
+        border-radius: 5px;             /* Rounded corners for each item */
+        color: #ffffff;                 /* Text color */
+    }
+
+    QListWidget::item:hover {
+        background-color: #444444;      /* Slightly lighter gray when hovered */
+    }
+
+    QListWidget::item:selected {
+        background-color: #555555;      /* Different gray when selected */
+        color: #ffffff;                 /* Keep text color white when selected */
+    }
+
+    QListWidget::item:selected:active {
+        background-color: #666666;      /* Slightly darker when clicked/active */
+    }
+
+    QListWidget::item:selected:!active {
+        background-color: #4d4d4d;      /* Gray when item is selected but not active (focus lost) */
     }
 """
