@@ -2,7 +2,6 @@ import pynput
 import key
 import time
 from console_widget import QPConsoleWidget, LogType
-from stoppable_thread import StoppableThread
 from PySide6.QtCore import QTimer
 
 # A track will ideally be a sequence of input registered, in order to be played back by the script.

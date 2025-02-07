@@ -12,6 +12,7 @@ class QPConsoleWidget(qt.QTextEdit):
     def __init__(self):
         super().__init__()
         self.setReadOnly(True)
+        self.setMinimumHeight(100)
         
     
     def AddLog(self, log_text : str, log_type : LogType = LogType.ACTION):
@@ -19,5 +20,3 @@ class QPConsoleWidget(qt.QTextEdit):
         cursor = self.textCursor()
         cursor.movePosition(qtgui.QTextCursor.MoveOperation.End)
         self.setTextCursor(cursor)
-
-    
