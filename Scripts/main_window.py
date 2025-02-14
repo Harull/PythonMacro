@@ -2,10 +2,12 @@ from PySide6.QtCore import Qt
 from track import Track
 import PySide6.QtWidgets as qt
 import PySide6.QtGui as qtgui
+import PySide6.QtCore as qtcore
 import qpersonaliezd_widgets as qp #qpb = Q Personal Button
 from console_widget import QPConsoleWidget
 import enum
 from dictionary_utility import DictionaryUtil
+from track_replayer import TrackReplayer
 
 class EDelayTime(enum.Enum):
     NO_DELAY = 0
@@ -18,11 +20,14 @@ class MainWindow(qt.QMainWindow):
 
     DEFAULT_TRACK_NAME = "Default Track"
     window_size = (100, 100) 
-    start_record_track_shortcut = "F2"
-    stop_record_track_shortcut = "F3"
-    drop_edit_flag_shortcut = "F4"
+    start_record_track_shortcut = Qt.Key.Key_F2
+    start_replay_track_shortcut = Qt.Key.Key_F2
+    stop_record_track_shortcut = Qt.Key.Key_F3
+    stop_replay_track_shortcut = Qt.Key.Key_F3
+    drop_edit_flag_shortcut = Qt.Key.Key_F4
     last_or_current_track : Track = None
     is_recording_new_track : bool = False
+    is_replaying_track : bool = False
     all_recorded_tracks_dictionary = dict() # key : str, value : Track)
 
     def __init__(self, window_size):
@@ -33,7 +38,17 @@ class MainWindow(qt.QMainWindow):
         self.LoadAllFromSaveFiles()
         
         self.setWindowTitle("Macro Maker")
-        self.setWindowIcon(qtgui.QIcon("Assets/MacroMakerLogo.png"))
+        self.keyPressEvent(qtgui.QKeyEvent(qtcore.QEvent.Type.KeyPress, self.start_record_track_shortcut, Qt.KeyboardModifier.NoModifier))
+
+        window_icon = qtgui.QIcon() #TODO see why and how to change the task bar icon, because this didnt event help changing it...
+        window_icon.addFile('Assets/MacroMakerIcon16x16.png', qtcore.QSize(16,16))
+        window_icon.addFile('Assets/MacroMakerIcon24x24.png', qtcore.QSize(24,24))
+        window_icon.addFile('Assets/MacroMakerIcon32x32.png', qtcore.QSize(32,32))
+        window_icon.addFile('Assets/MacroMakerIcon48x48.png', qtcore.QSize(48,48))
+        window_icon.addFile('Assets/MacroMakerIcon256x256.png', qtcore.QSize(256,256))
+        self.setWindowIcon(qtgui.QIcon(window_icon))
+
+        
         self.setMaximumSize(self.window_size[0], self.window_size[1])
         self.setMinimumSize(self.window_size[0], self.window_size[1])
 
@@ -82,6 +97,7 @@ class MainWindow(qt.QMainWindow):
         shortcut_layout = qt.QVBoxLayout()
         shortcut_layout.addWidget(qt.QLabel("Edit main shortcuts"), alignment=Qt.AlignmentFlag.AlignHCenter)
         shortcut_layout.addWidget(qt.QLabel("Start the Record"),alignment= Qt.AlignmentFlag.AlignLeft)
+
         shortcut_layout.addWidget(qp.QPBindingButton(self.start_record_track_shortcut, 100))
         shortcut_layout.addWidget(qt.QLabel("Stop the Record"),alignment= Qt.AlignmentFlag.AlignLeft)
         shortcut_layout.addWidget(qp.QPBindingButton(self.stop_record_track_shortcut, 100))
@@ -116,9 +132,9 @@ class MainWindow(qt.QMainWindow):
 
         manage_tracks_layout.addWidget(qt.QLabel("Here are all your recorded tracks:", alignment=Qt.AlignmentFlag.AlignHCenter))
 
-        self.recorded_track_replay_section_list = qt.QListWidget()
-        self.recorded_track_replay_section_list.setSelectionMode(qt.QAbstractItemView.SelectionMode.MultiSelection)
-        manage_tracks_layout.addWidget(self.recorded_track_replay_section_list)
+        self.recorded_track_manage_section_list = qt.QListWidget()
+        self.recorded_track_manage_section_list.setSelectionMode(qt.QAbstractItemView.SelectionMode.MultiSelection)
+        manage_tracks_layout.addWidget(self.recorded_track_manage_section_list)
 
         delete_selected_tracks_button = qp.QPButton("Delete Selected Tracks", self.DeleteSelectedTracks)
         manage_tracks_layout.addWidget(delete_selected_tracks_button)
@@ -126,15 +142,14 @@ class MainWindow(qt.QMainWindow):
         delete_selected_tracks_button = qp.QPButton("Edit Selected Track", self.EditSelectedTrack)
         manage_tracks_layout.addWidget(delete_selected_tracks_button)
 
-        pass
-
     def InitReplayTrackLayout(self):
 
         replay_track_layout = qt.QVBoxLayout()
         self.replay_track_widget = qt.QWidget()
         self.replay_track_widget.setLayout(replay_track_layout)
-
-        first_h_layout = qt.QHBoxLayout()
+        
+        #SUBMAIN LAYOUT TOP
+        submain_h_layout = qt.QHBoxLayout()
 
         first_v_layout = qt.QVBoxLayout()
         first_v_layout.addWidget(qt.QLabel("Select A Track"), alignment=Qt.AlignmentFlag.AlignHCenter)
@@ -148,6 +163,7 @@ class MainWindow(qt.QMainWindow):
         self.PopulateTimeOffsetDropdown(self.replay_time_offset_dropdown)
         second_v_layout.addWidget(self.replay_time_offset_dropdown)
         self.replay_speed_multiplier_slider = qp.QPSliderInfoWidget("Replay Speed Multiplier", 400, 1, 10)
+        second_v_layout.addWidget(qt.QLabel("[WARNING] A replay speed above 3 can give weird results.", alignment=Qt.AlignmentFlag.AlignBottom))
         second_v_layout.addWidget(self.replay_speed_multiplier_slider)
         self.play_w_edited_parts_checkbox = qt.QCheckBox("Play with edited parts")
         second_v_layout.addWidget(self.play_w_edited_parts_checkbox)
@@ -158,15 +174,31 @@ class MainWindow(qt.QMainWindow):
         self.play_count_slider = qp.QPSliderInfoWidget("Play a number of times",400,1,100)
         second_v_layout.addWidget(self.play_count_slider)
         
-        first_h_layout.addLayout(first_v_layout)
-        first_h_layout.addLayout(second_v_layout)
+        submain_h_layout.addLayout(first_v_layout)
+        submain_h_layout.addLayout(second_v_layout)
+        #SUBMAIN LAYOUT TOP
 
-        replay_track_layout.addLayout(first_h_layout)
-       
+        #SUBMAIN LAYOUT BOT
+        submain_v_layout = qt.QVBoxLayout()
+        submain_v_layout.addWidget(qt.QLabel("Shortcuts", alignment=Qt.AlignmentFlag.AlignHCenter))
 
+        third_v_layout = qt.QVBoxLayout()
+        third_v_layout.addWidget(qt.QLabel("Start replay"))
+        self.start_replay_button = qp.QPBindingButton(self.start_replay_track_shortcut, 100)
+        
+        third_v_layout.addWidget(self.start_replay_button)
 
+        third_v_layout.addWidget(qt.QLabel("Stop replay"))
+        self.stop_replay_button = qp.QPBindingButton(self.stop_replay_track_shortcut, 100)
+        third_v_layout.addWidget(self.stop_replay_button)
+        submain_v_layout.addLayout(third_v_layout)
 
-        pass
+        self.replay_selected_track_button = qp.QPButton("Replay Selected Track", self.ReplaySelectedTrack)
+        submain_v_layout.addWidget(self.replay_selected_track_button)
+        #SUBMAIN LAYOUT BOT
+
+        replay_track_layout.addLayout(submain_h_layout)
+        replay_track_layout.addLayout(submain_v_layout)
 
     def InitTrackSchedulerLayout(self):
 
@@ -227,6 +259,7 @@ class MainWindow(qt.QMainWindow):
     def StartRecording(self):
         if self.is_recording_new_track:
             return
+        self.showMinimized()
         self.last_or_current_track = Track()
         self.last_or_current_track.StartTracking(self.start_time_offset_dropdown.currentData(), self.console_log)
         self.is_recording_new_track = True
@@ -234,9 +267,12 @@ class MainWindow(qt.QMainWindow):
     def StopRecording(self):
         if not self.is_recording_new_track:
             return
+        if self.isMinimized():
+            self.showMaximized()
         self.last_or_current_track.StopTracking(self.console_log)
         valid_name_of_track = self.GetUniqueTrackName()
         self.all_recorded_tracks_dictionary.update({valid_name_of_track : self.last_or_current_track})
+        self.recorded_track_manage_section_list.addItem(valid_name_of_track)
         self.recorded_track_replay_section_list.addItem(valid_name_of_track)
         self.console_log.AddLog(f"The track was saved as '{valid_name_of_track}'")
         self.is_recording_new_track = False
@@ -256,7 +292,7 @@ class MainWindow(qt.QMainWindow):
         return DictionaryUtil.GetUniqueStringKey(self.all_recorded_tracks_dictionary, wanted_name)
     
     def DeleteSelectedTracks(self):
-        list_of_index_selected = self.recorded_track_replay_section_list.selectedIndexes()
+        list_of_index_selected = self.recorded_track_manage_section_list.selectedIndexes()
         count_of_items_selected = len(list_of_index_selected)
 
         # If you have no items selected return
@@ -266,7 +302,7 @@ class MainWindow(qt.QMainWindow):
         # Put all the items selected string in a single string, with indentation as a list
         list_as_text = ""
         for index in list_of_index_selected:
-            list_as_text += "- " + self.recorded_track_replay_section_list.item(index.row()).text() + "\n"
+            list_as_text += "- " + self.recorded_track_manage_section_list.item(index.row()).text() + "\n"
 
         # Open dialog box to ask if the user is sure and wants to delete
         return_value = qt.QMessageBox.question(self, "Are you sure you want to proceed? ", f"{count_of_items_selected} items to delete:\n{list_as_text}", qt.QMessageBox.Yes | qt.QMessageBox.No, qt.QMessageBox.No)
@@ -275,11 +311,26 @@ class MainWindow(qt.QMainWindow):
             # If the user wants to delete those tracks, we delete them.
             offset = 0
             for index in list_of_index_selected:
-                item_text = self.recorded_track_replay_section_list.item(index.row()-offset).text()
+                item_text = self.recorded_track_manage_section_list.item(index.row()-offset).text()
                 self.all_recorded_tracks_dictionary.pop(item_text)
+                self.recorded_track_manage_section_list.takeItem(index.row()-offset)
                 self.recorded_track_replay_section_list.takeItem(index.row()-offset)
                 self.console_log.AddLog(f"Deleted the track '{item_text}'")
                 offset+=1
+
+    def ReplaySelectedTrack(self):
+        list_of_selected_items = self.recorded_track_replay_section_list.selectedItems()
+        if len(list_of_selected_items) <= 0 or self.is_replaying_track:
+            return
+        self.showMinimized()
+        track_to_replay : Track = self.all_recorded_tracks_dictionary[list_of_selected_items[0].text()]
+        track_replayer = TrackReplayer(track_to_replay, self.play_count_slider.GetValue(), self.play_in_loop.isChecked(), self.replay_speed_multiplier_slider.GetValue())
+        track_replayer.ConnectToExecuteUpponFinishReplay(lambda : self.SetIsReplayingTrack(False))
+        self.is_replaying_track = True
+        track_replayer.run(self.replay_time_offset_dropdown.currentData())
+    
+    def SetIsReplayingTrack(self, value : bool):
+        self.is_replaying_track = value
 
     def EditSelectedTrack(self):
         # qt.QDialogButtonBox.open()
@@ -296,3 +347,27 @@ class MainWindow(qt.QMainWindow):
 
     def CheckSingleSelection(self, list : qt.QListWidget):
         return len(list.selectedIndexes()) == 1
+    
+
+    def keyPressEvent(self, event):
+        print("A key was hit")
+
+        ## NOTE TO SELF, READ THIS
+        # So, you tried to do key event shortcuts handling like the code bellow, only to find out that you need the focus of the window in order to listen to your inputs.
+        # Since it's not what you would like, you found a way to do it by using the pynput library, your idea was to create a keyboard.Listener, and whenever a key is pressed, you execute the callback associated with the key.
+        # doc here: https://pynput.readthedocs.io/en/latest/keyboard.html
+        assert(False)
+        if type(event) == qtgui.QKeyEvent:
+            print("this key is a qtgui.QKeyEvent")
+            key_event : qtgui.QKeyEvent = event
+            key : Qt.Key = key_event.key()
+            if key == self.stop_record_track_shortcut:
+                print("This is the stop_record_track_shortcut key")
+            if key == self.start_record_track_shortcut:
+                print("This is the start_record_track_shortcut key")
+            if key == self.stop_replay_track_shortcut:
+                print("This is the stop_replay_track_shortcut key")
+            if key == self.start_replay_track_shortcut:
+                print("This is the start_replay_track_shortcut key")
+                
+

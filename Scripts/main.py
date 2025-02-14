@@ -33,7 +33,6 @@ def exec_thread():
 
 # thread = threading.Thread(target = exec_thread, daemon=True)
 # thread.start()
-
 app.exec()
 
 # from pynput import keyboard

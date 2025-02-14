@@ -51,8 +51,8 @@ class QPSliderInfoWidget(qt.QWidget):
 
 class QPBindingButton(qt.QPushButton):
     current_binding : str = ""
-    def __init__(self, initial_binding : str, width:int):
-        super().__init__(initial_binding)
+    def __init__(self, initial_binding : Qt.Key, width:int):
+        super().__init__(self.GetBindingAsString(initial_binding))
 
         self.setFixedWidth(width)
         self.current_binding = initial_binding
@@ -62,6 +62,10 @@ class QPBindingButton(qt.QPushButton):
     
     def SetBinding(self, new_binding:str):
         self.current_binding = new_binding
+
+    def GetBindingAsString(self, key : Qt.Key):
+        to_return : str = key.__str__()
+        return to_return[to_return.find("Key_")+4:]
 
     def OpenRebindDialog(self):
         """This method allows to change your current binding"""

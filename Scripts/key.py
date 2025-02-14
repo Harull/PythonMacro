@@ -25,7 +25,7 @@ class Key:
         self.mouse_button_clicked = None
 
     def ExecuteToKey(self, current_replay_time : float, replay_speed : float):
-        """Execute to key is a method in which we'll try to reach the state of the key, meaning matching the mouse position"""
+        """Execute to key is a method in which we'll try to reach the state of the key, meaning we'll match the input, for example: matching the mouse position"""
         was_key_executed : bool = current_replay_time >= self.time/replay_speed
         time_of_the_executed_key : float = self.time /replay_speed
 
