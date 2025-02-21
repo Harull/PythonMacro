@@ -3,11 +3,12 @@ from track import Track
 import PySide6.QtWidgets as qt
 import PySide6.QtGui as qtgui
 import PySide6.QtCore as qtcore
-import qpersonaliezd_widgets as qp #qpb = Q Personal Button
+import qpersonalized_widgets as qp #qpb = Q Personal Button
 from console_widget import QPConsoleWidget
 import enum
 from dictionary_utility import DictionaryUtil
 from track_replayer import TrackReplayer
+import pynput.keyboard as keyboard
 
 class EDelayTime(enum.Enum):
     NO_DELAY = 0
@@ -20,25 +21,30 @@ class MainWindow(qt.QMainWindow):
 
     DEFAULT_TRACK_NAME = "Default Track"
     window_size = (100, 100) 
-    start_record_track_shortcut = Qt.Key.Key_F2
-    start_replay_track_shortcut = Qt.Key.Key_F2
-    stop_record_track_shortcut = Qt.Key.Key_F3
-    stop_replay_track_shortcut = Qt.Key.Key_F3
-    drop_edit_flag_shortcut = Qt.Key.Key_F4
+    start_record_track_shortcut = "<ctrl>+A+Z+E+R+T+Y"
+    stop_record_track_shortcut = "<f2>"
+    start_replay_track_shortcut = "<f3>"
+    stop_replay_track_shortcut = "<f4>"
+    drop_edit_flag_shortcut = "<f5>"
     last_or_current_track : Track = None
     is_recording_new_track : bool = False
     is_replaying_track : bool = False
     all_recorded_tracks_dictionary = dict() # key : str, value : Track)
+    shortcut_kb_listener : keyboard.Listener
+    global_hotkeys : keyboard.GlobalHotKeys
+    track_replayer : TrackReplayer
+
 
     def __init__(self, window_size):
         super().__init__()
+
         self.window_size = window_size
         self.setToolTipDuration(1)
-
         self.LoadAllFromSaveFiles()
+        self.global_hotkeys = None
+        self.UpdateGlobalHotkeys()
         
         self.setWindowTitle("Macro Maker")
-        self.keyPressEvent(qtgui.QKeyEvent(qtcore.QEvent.Type.KeyPress, self.start_record_track_shortcut, Qt.KeyboardModifier.NoModifier))
 
         window_icon = qtgui.QIcon() #TODO see why and how to change the task bar icon, because this didnt event help changing it...
         window_icon.addFile('Assets/MacroMakerIcon16x16.png', qtcore.QSize(16,16))
@@ -48,7 +54,6 @@ class MainWindow(qt.QMainWindow):
         window_icon.addFile('Assets/MacroMakerIcon256x256.png', qtcore.QSize(256,256))
         self.setWindowIcon(qtgui.QIcon(window_icon))
 
-        
         self.setMaximumSize(self.window_size[0], self.window_size[1])
         self.setMinimumSize(self.window_size[0], self.window_size[1])
 
@@ -68,6 +73,12 @@ class MainWindow(qt.QMainWindow):
         self.central_stacked_widget.setCurrentWidget(self.create_track_widget)
         self.setCentralWidget(self.central_stacked_widget)
 
+        
+
+
+    def Foo(self):
+        print("foo")
+        
     def LoadAllFromSaveFiles(self):
         """In this method, we will be loading from file some saved settings or tracks, such as the binding to start the track recorder, or a track saved"""
         #TODO
@@ -76,7 +87,23 @@ class MainWindow(qt.QMainWindow):
         #Init self.drop_edit_flag_shortcut = ""
         #Init self.all_recorded_tracks
         pass
-        
+    
+    def UpdateGlobalHotkeys(self):
+        if self.global_hotkeys is not None and self.global_hotkeys.is_alive():
+            self.global_hotkeys.stop()
+
+        # This system is good, but since the callbacks are executed in a thread, i cannot manipulate Qthreads in here, so I most likely need to find a solution
+        # I cannot directly call my methods
+        self.global_hotkeys = keyboard.GlobalHotKeys({ 
+            self.start_record_track_shortcut : self.StartRecording,
+            self.stop_record_track_shortcut : self.StopRecording,
+            self.start_replay_track_shortcut : self.ReplaySelectedTrack,
+            self.stop_replay_track_shortcut : self.StopReplayingTrack,
+            self.drop_edit_flag_shortcut : self.StartRecording,
+        })
+        self.global_hotkeys.setDaemon(True)
+        self.global_hotkeys.start()
+
 
     def InitCreateTrackLayout(self):
 
@@ -320,17 +347,24 @@ class MainWindow(qt.QMainWindow):
 
     def ReplaySelectedTrack(self):
         list_of_selected_items = self.recorded_track_replay_section_list.selectedItems()
-        if len(list_of_selected_items) <= 0 or self.is_replaying_track:
+        if len(list_of_selected_items) <= 0:
             return
         self.showMinimized()
         track_to_replay : Track = self.all_recorded_tracks_dictionary[list_of_selected_items[0].text()]
-        track_replayer = TrackReplayer(track_to_replay, self.play_count_slider.GetValue(), self.play_in_loop.isChecked(), self.replay_speed_multiplier_slider.GetValue())
-        track_replayer.ConnectToExecuteUpponFinishReplay(lambda : self.SetIsReplayingTrack(False))
+        self.track_replayer = TrackReplayer(track_to_replay, self.play_count_slider.GetValue(), self.play_in_loop.isChecked(), self.replay_speed_multiplier_slider.GetValue())
+        self.track_replayer.ConnectToExecuteUpponFinishReplay(lambda : self.SetIsReplayingTrack(False))
         self.is_replaying_track = True
-        track_replayer.run(self.replay_time_offset_dropdown.currentData())
+        self.track_replayer.run(self.replay_time_offset_dropdown.currentData())
     
     def SetIsReplayingTrack(self, value : bool):
         self.is_replaying_track = value
+
+    def StopReplayingTrack(self):
+        if self.track_replayer is not None and self.track_replayer.isRunning():
+            self.track_replayer.terminate()
+
+    def TryAndDropEditFlag(self):
+        pass #TODO if have time
 
     def EditSelectedTrack(self):
         # qt.QDialogButtonBox.open()
@@ -349,25 +383,30 @@ class MainWindow(qt.QMainWindow):
         return len(list.selectedIndexes()) == 1
     
 
-    def keyPressEvent(self, event):
-        print("A key was hit")
+    # def keyPressEvent(self, event):
+    #     print("A key was hit")
 
-        ## NOTE TO SELF, READ THIS
-        # So, you tried to do key event shortcuts handling like the code bellow, only to find out that you need the focus of the window in order to listen to your inputs.
-        # Since it's not what you would like, you found a way to do it by using the pynput library, your idea was to create a keyboard.Listener, and whenever a key is pressed, you execute the callback associated with the key.
-        # doc here: https://pynput.readthedocs.io/en/latest/keyboard.html
-        assert(False)
-        if type(event) == qtgui.QKeyEvent:
-            print("this key is a qtgui.QKeyEvent")
-            key_event : qtgui.QKeyEvent = event
-            key : Qt.Key = key_event.key()
-            if key == self.stop_record_track_shortcut:
-                print("This is the stop_record_track_shortcut key")
-            if key == self.start_record_track_shortcut:
-                print("This is the start_record_track_shortcut key")
-            if key == self.stop_replay_track_shortcut:
-                print("This is the stop_replay_track_shortcut key")
-            if key == self.start_replay_track_shortcut:
-                print("This is the start_replay_track_shortcut key")
-                
+    #     ## NOTE TO SELF, READ THIS
+    #     # So, you tried to do key event shortcuts handling like the code bellow, only to find out that you need the focus of the window in order to listen to your inputs.
+    #     # Since it's not what you would like, you found a way to do it by using the pynput library, your idea was to create a keyboard.Listener, and whenever a key is pressed, you execute the callback associated with the key.
+    #     # doc here: https://pynput.readthedocs.io/en/latest/keyboard.html
+    #     assert(False)
+    #     if type(event) == qtgui.QKeyEvent:
+    #         print("this key is a qtgui.QKeyEvent")
+    #         key_event : qtgui.QKeyEvent = event
+    #         key : Qt.Key = key_event.key()
+    #         if key == self.stop_record_track_shortcut:
+    #             print("This is the stop_record_track_shortcut key")
+    #         if key == self.start_record_track_shortcut:
+    #             print("This is the start_record_track_shortcut key")
+    #         if key == self.stop_replay_track_shortcut:
+    #             print("This is the stop_replay_track_shortcut key")
+    #         if key == self.start_replay_track_shortcut:
+    #             print("This is the start_replay_track_shortcut key")
+    
+    def OnShortcutKeyPressed(key : keyboard.KeyCode):
+        keyboard.Key.esc
+
+        
+        
 
