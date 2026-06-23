@@ -23,7 +23,7 @@ class MainWindow(qt.QMainWindow):
     window_size = (100, 100) 
     start_record_track_shortcut = "<ctrl>+A+Z+E+R+T+Y"
     stop_record_track_shortcut = "<f2>"
-    start_replay_track_shortcut = "<f3>"
+    qsdfsqfdsqfqsdf_replay_track_shortcut = "<f3>"
     stop_replay_track_shortcut = "<f4>"
     drop_edit_flag_shortcut = "<f5>"
     last_or_current_track : Track = None
@@ -74,15 +74,10 @@ class MainWindow(qt.QMainWindow):
         self.setCentralWidget(self.central_stacked_widget)
 
         
-
-
-    def Foo(self):
-        print("foo")
-        
     def LoadAllFromSaveFiles(self):
         """In this method, we will be loading from file some saved settings or tracks, such as the binding to start the track recorder, or a track saved"""
         #TODO
-        #Init self.start_record_track_shortcut = ""
+        #Init self.start_record_track_shortcut = ""kqjmdlkfjqmlskd
         #Init self.stop_record_track_shortcut = ""
         #Init self.drop_edit_flag_shortcut = ""
         #Init self.all_recorded_tracks

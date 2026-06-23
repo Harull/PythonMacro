@@ -11,12 +11,20 @@ from font_loader import FontLoader
 
 app = qt.QApplication([])
 app.setStyleSheet(dark_theme)
-app.setFont(FontLoader.GetQFont("Assets/Lato/Lato-Regular.ttf"))
+app.setFont("Assets/Lato/Lato-Regular.ttf")
+# app.setFont(FontLoader.GetQFont("Assets/Lato/Lato-Regular.ttf"))
 main_window = MainWindow((1080,720))
 main_window.show()
+app.exec()
 
 
 
+
+
+
+
+
+# Some tests about threading, don't mind that
 def exec_thread():
     track = Track()
     time.sleep(5)
@@ -30,10 +38,8 @@ def exec_thread():
     track_replayer = TrackReplayer(track, 0.5)
     track_replayer.run()
 
-
 # thread = threading.Thread(target = exec_thread, daemon=True)
 # thread.start()
-app.exec()
 
 # from pynput import keyboard
 
